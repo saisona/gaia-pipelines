@@ -20,6 +20,10 @@ spec:
       labels:
         {{- include "gaia-pipelines.selectorLabels" . | nindent 8 }}
     spec:
+      volumes:
+        - name: {{.Release.Name}}-pv
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name}}-pvc
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -29,13 +33,16 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
+          volumeMounts:
+            - name: {{ .Release.Name }}-pv
+              mountPath: "/mnt/data"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
               protocol: TCP
           livenessProbe:
             httpGet:
